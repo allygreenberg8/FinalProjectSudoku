@@ -1,4 +1,6 @@
-import tkinter as tk
+import pygame
+import sys
+pygame.init()
 
 class Cell:
     #initialization constructor
@@ -22,25 +24,28 @@ class Cell:
 
     def draw(self):
         #coordinates and constant variables
-        xcord_1 = self.col * self.size
-        ycord_1 = self.row * self.size
+        xcord = self.col * self.size
+        ycord = self.row * self.size
 
-        xcord_2 = xcord_1 + self.size
-        ycord_2 = ycord_1 + self.size
-
-        font_name = "Arial"
+        cell_size = 50
+        cell_border_color = (0, 0, 0) #black outline
+        selected_cell_border_color = (255, 0, 0) #red outline
+        font_color = (0, 0, 0)
         font_size = 20
 
-        #draw the cell border
-        self.screen.create_rectangle(xcord_1, ycord_1, xcord_2, ycord_2, fill="white")
+        #cell rectangle
+        cell = pygame.Rect(xcord, ycord, cell_size, cell_size)
 
-        #cases if the cell has a non zero value
-        if self.value != 0:
-            self.screen.create_text(xcord_1 + self.size//2, ycord_1 + self.size//2, text=str(self.value), font=(font_name, font_size))
-        elif self.sketched_value != 0:
-            font_size = 15
-            self.screen.create_text(xcord_1 + self.size // 2, ycord_1 + self.size // 2, text=str(self.value), font=(font_name, font_size))
-
-        #changes the border to red if selected
         if self.selected:
-            self.screen.create_rectangle(xcord_1, ycord_1, xcord_2, ycord_2, outline="red")
+            cell_border_color = selected_cell_border_color
+
+        #draw cell
+        pygame.draw.cell(self.screen, cell_border_color, cell, 3)
+
+        #if the cell has a non-zero value, format the number in the cell box
+        if self.value != 0:
+            num_font = pygame.font.Font(None, font_size)
+            text_style = pygame.font.render(str(self.value), font_color)
+            text_rect = text_style.get_rect(center=cell.center)
+            self.screen.blit(text_style, text_rect)
+
