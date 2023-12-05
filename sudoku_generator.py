@@ -123,5 +123,8 @@ class SudokuGenerator:
     # Sudoku Generator - to be implemented outside of class
     # def generate_sudoku(size, removed):
         # sudoku = SudokuGenerator(row_length = size, removed_cells=removed)
+        # sudoku.fill_values()
+        # board = sudoku.get_board()
         # sudoku.remove_cells()
-        # return sudoku.get_board()
+        # board = sudoku.get_board()
+        # return board
