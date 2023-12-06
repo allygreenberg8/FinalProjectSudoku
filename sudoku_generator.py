@@ -1,36 +1,19 @@
-# Import random - to be used in unused_in_box function
-import random
-
 class SudokuGenerator:
-    # Initialize
-    def __init__(self, row_length=9, removed_cells=0):
+    def __init__(self, row_length, removed_cells):
         self.row_length = row_length
         self.removed_cells = removed_cells
+        self.board = [[0 for _ in range(row_length)] for _ in range(row_length)]
+        self.fill_values()
+        self.remove_cells()
 
-    # 2. Get Board
-    def get_board(self):
-        return self.board
+        self.random_module = __import__('random')
 
-    # 3. Print Board
-    def print_board(self):
-        for row in self.board:
-            print(row)
-
-    # 4. Valid in row
     def valid_in_row(self, row, num):
-        for i in range(self.row_length):
-            if self.board[row][i] == num:
-                return False
-        return True
+        return num not in self.board[row]
 
-    # 5. Valid in col
     def valid_in_col(self, col, num):
-        for i in range(self.row_length):
-            if self.board[i][col] == num:
-                return False
-        return True
+        return num not in [self.board[row][col] for row in range(self.row_length)]
 
-    # 6. Valid in box
     def valid_in_box(self, row_start, col_start, num):
         for i in range(3):
             for j in range(3):
@@ -38,93 +21,84 @@ class SudokuGenerator:
                     return False
         return True
 
-    # 7. Is Valid
+    def fill_box(self, row_start, col_start):
+        nums = list(range(1, 10))
+        self.random_module.shuffle(nums)
+        for i in range(3):
+            for j in range(3):
+                num = nums.pop()
+                while not self.valid_in_row(row_start + i, num) or not self.valid_in_col(col_start + j, num):
+                    nums.insert(0, num)
+                    num = nums.pop()
+                self.board[row_start + i][col_start + j] = num
+
     def is_valid(self, row, col, num):
-        # Checks if number is in valid range
-        if num < 1 or num > 9:
+        # Check if the number is not in the given row
+        if num in self.board[row]:
             return False
-        # Checks columns
-        for i in range(9):
-            if self.board[i][col] == num:
-                return False
-        # Checks rows
-        for i in range(9):
-            if self.board[row][i] == num:
-                return False
+
+        # Check if the number is not in the given column
+        if num in [self.board[r][col] for r in range(self.row_length)]:
+            return False
+
+        # Check if the number is not in the 3x3 box
         row_start = row - row % 3
         col_start = col - col % 3
-        return self.valid_in_box(row_start, col_start, num)
-
-    # Additional function to create unused nums to be implemented into Fill Box function.
-    def unused_in_box(self, row_start, col_start):
-        used_nums = set()
         for i in range(3):
             for j in range(3):
-                used_nums.add(self.board[row_start + i][col_start + j])
-        all_nums = set(range(1,10))
-        unused_nums = list(all_nums - used_nums)
-        random.shuffle(unused_nums)
-        return unused_nums
+                if self.board[row_start + i][col_start + j] == num:
+                    return False
 
-    # 8. Fill box
-    def fill_box(self, row_start, col_start):
-        unused_nums = self.unused_in_box(row_start, col_start)
-        for i in range(3):
-            for j in range(3):
-                self.board[row_start + i][col_start + j] = unused_nums.pop()
+        return True
 
-    # 9. Fill Diagonal
     def fill_diagonal(self):
         for i in range(0, self.row_length, 3):
-            self.fill_box(i,i)
+            self.fill_box(i, i)
 
-    # 10. Fill remaining - provided
-    def fill_remaining(self, row, col):
-        if (col >= self.row_length and row < self.row_length - 1):
-            row += 1
-            col = 0
-        if row >= self.row_length and col >= self.row_length:
+    def fill_remaining(self, i, j):
+        if j >= self.row_length and i < self.row_length - 1:
+            i += 1
+            j = 0
+        if i >= self.row_length and j >= self.row_length:
             return True
-        if row < self.box_length:
-            if col < self.box_length:
-                col = self.box_length
-        elif row < self.row_length - self.box_length:
-            if col == int(row // self.box_length * self.box_length):
-                col += self.box_length
+        if i < 3:
+            if j < 3:
+                j = 3
+        elif i < 6:
+            if j == int(i / 3) * 3:
+                j += 3
         else:
-            if col == self.row_length - self.box_length:
-                row += 1
-                col = 0
-                if row >= self.row_length:
+            if j == 6:
+                i += 1
+                j = 0
+                if i >= self.row_length:
                     return True
-
-        for num in range(1, self.row_length + 1):
-            if self.is_valid(row, col, num):
-                self.board[row][col] = num
-                if self.fill_remaining(row, col + 1):
+        for num in range(1, 10):
+            if self.valid_in_row(i, num) and self.valid_in_col(j, num) and self.valid_in_box(i - i % 3, j - j % 3, num):
+                self.board[i][j] = num
+                if self.fill_remaining(i, j + 1):
                     return True
-                self.board[row][col] = 0
+                self.board[i][j] = 0
         return False
 
-    # 11. Fill Values - provided
     def fill_values(self):
         self.fill_diagonal()
-        self.fill_remaining(0, self.box_length)
+        self.fill_remaining(0, 0)
 
-    # 12. Remove cells
     def remove_cells(self):
-        cells = self.removed_cells
-        while cells > 0:
-            row, col = random.randint(0, self.row_length - 1), random.randint(0,self.row_length - 1)
-            if self.board[row][col] != 0:
-                self.board[row][col] = 0
-                cells -= 1
+        count = self.removed_cells
+        while count > 0:
+            i = self.random_module.randint(0, 8)
+            j = self.random_module.randint(0, 8)
+            if self.board[i][j] != 0:
+                count -= 1
+                self.board[i][j] = 0
 
-    # Sudoku Generator - to be implemented outside of class
-    # def generate_sudoku(size, removed):
-        # sudoku = SudokuGenerator(row_length = size, removed_cells=removed)
-        # sudoku.fill_values()
-        # board = sudoku.get_board()
-        # sudoku.remove_cells()
-        # board = sudoku.get_board()
-        # return board
+    def get_board(self):
+        return self.board
+
+
+def generate_sudoku(self, size, removed):
+    generator = SudokuGenerator(row_length=size, removed_cells=removed)
+    sudoku_board = generator.get_board()
+    return sodoku_board
